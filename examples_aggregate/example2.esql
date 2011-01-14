@@ -1,0 +1,45 @@
+
+-- This is the code to the second example for the aggregate-method (c.f. www.mqsiuser.net)
+
+      CALL CopyMessageHeaders();
+      SET OutputRoot.XMLNSC.message.date = InputRoot.XMLNSC.message.header.date || ' ' || InputRoot.XMLNSC.message.header.time;
+
+      DECLARE rOutOrder REFERENCE TO OutputRoot.XMLNSC;
+      DECLARE rInOrder  REFERENCE TO InputRoot.XMLNSC.message;
+      MOVE rInOrder FIRSTCHILD NAME 'order';         
+      WHILE LASTMOVE( rInOrder ) DO
+         
+         CALL moveRef( rOutOrder, 'message.order' );
+         SET rOutOrder.orderNumber = rInOrder.orderNumber;   
+         
+         DECLARE rOutPos REFERENCE TO rOutOrder;
+         DECLARE rInPos REFERENCE TO rInOrder;
+         MOVE rInPos FIRSTCHILD NAME 'position';         
+         WHILE LASTMOVE( rInPos ) DO
+            
+            CALL aggregate( rOutPos, 'position' , 'materialNumber', rInPos.materialNumber );
+         
+            SET rOutPos.materialNumber = rInPos.materialNumber;
+            SET rOutPos.quantity = CAST( rInPos.quantity AS INT ) + COALESCE( CAST( rOutPos.quantity AS INT ), 0);
+
+            DECLARE rOutSubPos REFERENCE TO rOutPos;
+            DECLARE rInSubPos REFERENCE TO rInPos;
+            MOVE rInSubPos FIRSTCHILD NAME 'subPos';
+            WHILE LASTMOVE( rInSubPos ) DO
+               
+               CALL aggregate( rOutSubPos, 'subPos' , 'batch', rInSubPos.batch );
+            
+               SET rOutSubPos.(XML.Element)batch = rInSubPos.batch;
+               SET rOutSubPos.quantity = CAST( rInSubPos.quantity AS INT ) + COALESCE( CAST( rOutSubPos.quantity AS INT ), 0);
+   
+               MOVE rInSubPos NEXTSIBLING REPEAT NAME;
+            END WHILE;
+
+            MOVE rInPos NEXTSIBLING REPEAT NAME;
+         END WHILE;
+
+         MOVE rInOrder NEXTSIBLING REPEAT NAME;
+      END WHILE;
+
+      RETURN TRUE;
+

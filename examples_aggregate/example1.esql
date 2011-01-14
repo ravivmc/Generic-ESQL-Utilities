@@ -1,0 +1,31 @@
+
+-- This is the code to the first example for the aggregate-method (c.f. www.mqsiuser.net)
+
+      CALL CopyMessageHeaders();
+      SET OutputRoot.XMLNSC.message.date = InputRoot.XMLNSC.message.header.date || ' ' || InputRoot.XMLNSC.message.header.time;
+
+      DECLARE rOutOrder REFERENCE TO OutputRoot;
+      DECLARE rInOrder REFERENCE TO InputRoot.XMLNSC.message.orders;
+      MOVE rInOrder FIRSTCHILD NAME 'order';      
+      WHILE LASTMOVE( rInOrder ) DO
+
+         CALL moveRef( rOutOrder, 'XMLNSC.message.orders.order' );                     
+         SET rOutOrder.(XML.Element)orderNumber = rInOrder.orderNumber;
+         
+         DECLARE rOutPos REFERENCE TO rOutOrder;
+         DECLARE rInPos REFERENCE TO rInOrder.positions;
+         MOVE rInPos FIRSTCHILD NAME 'position';         
+         WHILE LASTMOVE( rInPos ) DO
+            
+            CALL aggregate( rOutPos, 'positions.position' , 'materialNumber', rInPos.materialNumber );
+         
+            SET rOutPos.(XML.Element)materialNumber = rInPos.materialNumber;
+            SET rOutPos.(XML.Element)quantity = CAST( rInPos.quantity AS INT ) + COALESCE( CAST( rOutPos.quantity AS INT ), 0);
+
+            MOVE rInPos NEXTSIBLING REPEAT NAME;
+         END WHILE;
+
+         MOVE rInOrder NEXTSIBLING REPEAT NAME;
+      END WHILE;
+
+      RETURN TRUE;

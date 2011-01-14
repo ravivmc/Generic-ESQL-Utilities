@@ -1,0 +1,35 @@
+
+-- This is the code to the third example for the aggregate-method (c.f. www.mqsiuser.net)
+
+      CALL CopyMessageHeaders();
+      SET OutputRoot.XMLNSC.message.date = InputRoot.XMLNSC.message.header.date || ' ' || InputRoot.XMLNSC.message.header.time;
+
+      DECLARE rOutOrder REFERENCE TO OutputRoot;
+      DECLARE rInOrder REFERENCE TO InputRoot.XMLNSC.message.orders;
+      MOVE rInOrder FIRSTCHILD NAME 'order';      
+      WHILE LASTMOVE( rInOrder ) DO
+
+         CALL moveRef( rOutOrder, 'XMLNSC.message.orders.order' );                     
+         SET rOutOrder.(XML.Attribute)orderNumber = rInOrder.orderNumber;
+         
+         DECLARE rOutPos REFERENCE TO rOutOrder;
+         DECLARE rInPos REFERENCE TO rInOrder.positions;
+         MOVE rInPos FIRSTCHILD NAME 'position';         
+         WHILE LASTMOVE( rInPos ) DO
+            
+            DECLARE aggregate CHAR rInPos.materialNumber || '_' || rInPos.batch;
+            CALL aggregate( rOutPos, 'positions.position' , 'aggregate', aggregate );
+            SET rOutPos.aggregate = aggregate;
+            SET rOutPos.(XML.Attribute)materialNumber = rInPos.materialNumber;
+            SET rOutPos.(XML.Attribute)batch = rInPos.batch;
+            SET rOutPos.(XML.Element)quantity = CAST( rInPos.quantity AS INT ) + COALESCE( CAST( rOutPos.quantity AS INT ), 0 );
+
+            MOVE rInPos NEXTSIBLING REPEAT NAME;
+         END WHILE;
+         
+         CALL removeFieldFromChildren( rOutPos, 'aggregate', '' );
+      
+         MOVE rInOrder NEXTSIBLING REPEAT NAME;
+      END WHILE;
+
+      RETURN TRUE;
