@@ -1,1 +1,10 @@
 Generic ESQL-Utilities for IBM Message Broker
+
+
+Backlog:
+
+	- "xml2env" needs to have a counterpart "env2xml"
+
+	- quickSort schould use the moveRef() functionality
+
+
