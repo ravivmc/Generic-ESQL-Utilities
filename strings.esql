@@ -1,0 +1,169 @@
+ CREATE FUNCTION padding(IN string CHAR, IN length1 INT ) RETURNS CHAR
+   -- This Function will pad a string to a specific length. There are 2 cases:
+   -- String too short: add spaces:   'abcd'         --> 'abcd  '
+   -- String too long: truncate:      'abcdefghijkl'    --> 'abcdef'
+   BEGIN
+      DECLARE padding CHAR;
+      IF LENGTH( string ) <= length1 THEN         -- 'Batch', 10 --> 'Batch     '
+         SET padding = LEFT( string || SPACE( 1000 ), length1 );
+      ELSE
+         SET padding = string;       -- 'ItemDescription', 10 --> 'ItemDescri'
+      END IF;
+      RETURN padding;
+   END;
+
+   CREATE FUNCTION crlf() RETURNS CHAR   BEGIN
+      RETURN CAST( X'0D0A' AS CHAR CCSID 819 );   -- Carriage Return, Line Feed (Linux&Windows)
+   END;
+   CREATE FUNCTION lf() RETURNS CHAR BEGIN      
+      RETURN CAST( X'0A' AS CHAR CCSID 819 );      -- Line Feed (Linux only)
+   END;
+
+   CREATE FUNCTION crlfCcsidEncoding(IN ccsid INT, IN encoding INT) RETURNS CHAR
+   BEGIN      
+      -- For Linux&Windows: '0D0A',
+      -- '0D' for Windows only
+      RETURN CAST( X'0D0A' AS CHAR CCSID ccsid ENCODING encoding );   
+   END;
+
+   CREATE FUNCTION selectSubField(sourceString CHAR, delimiter CHAR, targetStringPosition INT) RETURNS CHAR
+   -- This function returns a substring at parameter position TargetStringPosition within the     
+   -- passed parameter SourceString.  An example of use might be:
+   -- selectSubField(MySourceField,' ',2) which will select the second subfield from the
+   -- field MySourceField delimited by a blank.  If MySourceField has the value
+   -- "First Second Third" the function will return the value "Second"
+   BEGIN
+      DECLARE delimiterPosition INT;
+      DECLARE currentFieldPosition INT 1;
+      DECLARE startNewString INT 1;
+      DECLARE workingSource CHAR sourceString;
+      SET delimiterPosition = POSITION( delimiter IN sourceString );
+      WHILE currentFieldPosition < targetStringPosition AND delimiterPosition <> 0 DO
+         SET startNewString = delimiterPosition + LENGTH( delimiter );
+         SET workingSource = SUBSTRING( workingSource FROM startNewString );
+         SET delimiterPosition = POSITION( delimiter IN workingSource );
+         SET currentFieldPosition = currentFieldPosition + 1;
+      END WHILE;      
+      IF currentFieldPosition < targetStringPosition THEN
+         SET workingSource = NULL;
+      ELSEIF delimiterPosition > 0 THEN
+         -- Remove anything following the delimiter from the string
+         SET workingSource = SUBSTRING( workingSource FROM 1 FOR delimiterPosition - 1 );     
+      END  IF;      
+      RETURN workingSource;
+   END;   
+   
+   CREATE FUNCTION countCharInChar(IN char1 CHAR, IN char2 CHAR) RETURNS INT
+   -- Returns the number of occurences of char1 in char2
+   -- E.g.:     ('A', 'ABCDABCDABCD')    --> 3
+   --           ('ABC', 'ABCDABCD')    --> 2
+   --         ...   
+   BEGIN      
+      DECLARE count INT 0;      
+      IF char1 IS NOT NULL AND char2 IS NOT NULL THEN      
+         DECLARE position1 INT POSITION( char1 IN char2 REPEAT count+1 );         
+         WHILE position1 <> 0 DO
+            SET count = count + 1;      
+            SET position1 = POSITION( char1 IN char2 REPEAT count+1 );
+         END WHILE;
+      END IF;   
+      RETURN count;
+   END;
+   
+   CREATE PROCEDURE xml2Env ( IN rEnv REFERENCE, IN xmlString CHAR )
+   -- Converts an xml-Tree and puts it into the environment:
+   -- <xml><a></a><b></b></xml> --> xml(a, b)
+   BEGIN
+      -- Trim whitespace and crlf from the xml:
+      DECLARE trimedXmlString CHAR TRIM( ' ' FROM xmlString );
+      SET trimedXmlString = TRIM( crlf() from trimedXmlString );
+      IF trimedXmlString IS NULL OR trimedXmlString = '' THEN
+         -- ignore emtpy or null strings
+      ELSEIF POSITION( '<' IN xmlString ) = 0 THEN      -- just plain Text
+         SET rEnv = xmlString;
+      ELSE                                    -- xml
+         DECLARE startTag1 INT POSITION( '<' IN trimedXmlString );
+         DECLARE startTag2 INT POSITION( '>' IN trimedXmlString );         
+         DECLARE beforeXML CHAR SUBSTRING( trimedXmlString FROM 1 FOR startTag1 - 1 );
+         CALL xml2Env ( rEnv, beforeXML );         
+         DECLARE tagName CHAR SUBSTRING( trimedXmlString FROM startTag1 + 1 FOR startTag2 - startTag1 - 1 );
+         DECLARE startTag CHAR '<' || tagName || '>';
+         DECLARE endTag CHAR '</' || tagName || '>';   
+         DECLARE endTag1 INT POSITION( endTag in trimedXmlString );
+         IF endTag1 IS NULL OR endTag1 = 0 THEN
+            CALL throw( 'Found no end tag ("</' || tagName || '>") for start tag "<' || tagName || '>": ' || crlf() || crlf() || '  "' || xmlString || '"' || crlf() || crlf() ||   'Please check if the xml is valid!' );
+         END IF;
+         DECLARE endTag2 INT endTag1 + LENGTH( tagName ) + 3;         
+         DECLARE inXML CHAR SUBSTRING( trimedXmlString FROM startTag2 + 1 FOR endTag1 - startTag2 - 1 );
+         CREATE LASTCHILD OF rEnv NAME tagName;
+         MOVE rEnv LASTCHILD;
+         CALL xml2Env ( rEnv.{tagName}, inXML );
+         MOVE rEnv PARENT;         
+         DECLARE afterXML CHAR SUBSTRING( trimedXmlString FROM endTag2 );
+         CALL xml2Env ( rEnv, afterXML );         
+      END IF;      
+   END;   
+      
+   CREATE PROCEDURE isNumeric ( IN string CHAR ) RETURNS BOOLEAN
+   BEGIN      
+      RETURN containsCharsOnly( string, '0123456789' );      
+   END;
+      
+   CREATE PROCEDURE isAlphanumeric ( IN string CHAR ) RETURNS BOOLEAN
+   BEGIN      
+      RETURN containsCharsOnly( string,  'abcdefghijklmnopqrstuvwxyz'
+                              || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                           );
+   END;
+
+   CREATE PROCEDURE isIdentifier ( IN string CHAR ) RETURNS BOOLEAN
+   BEGIN      
+      DECLARE firstCharOK BOOLEAN;      
+      DECLARE firstChar CHAR SUBSTRING( string FROM 1 FOR 1 );
+      DECLARE chars CHAR 'abcdefghijklmnopqrstuvwxyz'
+                  || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                  || '_';      
+      SET firstCharOK = containsCharsOnly( firstChar, chars );
+      RETURN firstCharOK AND containsCharsOnly( string, chars || '0123456789' );
+   END;
+
+   CREATE PROCEDURE isAlphanumOrNumeric ( IN string CHAR ) RETURNS BOOLEAN
+   BEGIN      
+      RETURN containsCharsOnly( string,  'abcdefghijklmnopqrstuvwxyz'
+                              || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                              || '0123456789'
+                           );
+   END;
+   
+   CREATE PROCEDURE isFieldReference ( IN string CHAR ) RETURNS BOOLEAN
+   BEGIN      
+      DECLARE firstCharOK BOOLEAN;      
+      DECLARE firstChar CHAR SUBSTRING( string FROM 1 FOR 1 );
+      DECLARE chars CHAR 'abcdefghijklmnopqrstuvwxyz'
+                  || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                  || '_';      
+      SET firstCharOK = containsCharsOnly( firstChar, chars );
+      RETURN firstCharOK AND containsCharsOnly( string, chars || '0123456789.' );
+   END;
+         
+   CREATE PROCEDURE containsCharsOnly ( IN string CHAR, IN chars CHAR ) RETURNS BOOLEAN
+   BEGIN      
+      DECLARE length1 INT LENGTH( string );
+      DECLARE i INT 1;
+      WHILE i <= length1 DO         
+         DECLARE char1 CHAR SUBSTRING( string FROM i FOR 1 );         
+         IF POSITION( char1 IN chars ) = 0 THEN   -- Found something else than the chars in 'chars'            
+            RETURN FALSE;            
+         END IF;         
+         SET i = i + 1;
+      END WHILE;      
+      RETURN TRUE;      
+   END;   
+   
+   CREATE PROCEDURE getSubstring ( IN pattern CHAR, IN string CHAR, IN length1 INT ) RETURNS CHAR
+   -- Gets a Substring from a Starting "pattern" in "string" for "length1"-characters
+   BEGIN      
+      DECLARE startSubString INT POSITION( pattern IN string ) + LENGTH( pattern );      
+      DECLARE result CHAR SUBSTRING( string FROM startSubString FOR length1 );      
+      RETURN result;      
+   END;

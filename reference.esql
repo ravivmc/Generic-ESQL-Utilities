@@ -1,0 +1,295 @@
+   CREATE PROCEDURE moveRef( INOUT ref REFERENCE, IN path CHAR )
+   -- This function is a wrapper/forwarder to moveRefReturn and spares the "RETURNS INT" !
+   BEGIN
+      DECLARE elementsCreated INT moveRefReturn( ref, path );
+   END;   
+
+   CREATE PROCEDURE moveRefReturn( INOUT ref REFERENCE, IN path CHAR ) RETURNS INT
+   -- This function navigates to an esql-reference
+   -- 'parent.child':  If the reference already points to one of the children, then it will leave the refenence there!
+   --               else it will move the reference to the FIRST CHILD or create a LAST CHILD if no child exists at all.
+   -- 'parent.child[<]' will navigate to the last 'child' of the element 'parent' (and creates it if it does not exist yet)
+   -- 'parent.child[>]' will navigate to the first 'child' of the element 'parent' (and creates it if it does not exist yet)
+   -- 'parent.child[+]' will create a new child element (and add it at the end)
+   -- 'parent.child' will take care of properly moving the reference if needed.
+   -- '+parent.child' will always append "parent.child" to the current reference
+   -- Returns the number of field-creations !
+   BEGIN
+      DECLARE elementsCreated INT 0;
+      DECLARE lastField CHAR getLastField( path );
+      DECLARE firstFields CHAR getFirstFields( path );
+      DECLARE navigator CHAR getNavigator( lastField );
+      DECLARE noPrecedingNavigators BOOLEAN POSITION( '[' IN firstFields ) = 0;
+      IF isSameRef( ref, path ) AND navigator IS NULL AND noPrecedingNavigators THEN   -- Note: The "+" from "+parent.child" is used in "isSameRef()" here!
+         -- "ref" already points to one of the children (and to the proper one, since no navigators are specified)
+         --> do nothing
+         RETURN 0;
+      ELSEIF isSameRef( ref, path ) THEN
+         -- "ref" already points to one of the children (but NOT to the proper one)
+         --> move ref to the parent and the navigators "<", ">" and "+" will later move it to the proper child (or create it if necessary)
+         MOVE ref PARENT;
+      END IF;
+      IF firstFields IS NOT NULL THEN
+         DECLARE elementsCreatedParent INT moveRefReturn( ref, firstFields );  -- Recurse into parent structures (if necessary!)
+         SET elementsCreated = elementsCreated + elementsCreatedParent;
+      END IF;
+      IF navigator IS NULL THEN      -- Try to move to the FIRST CHILD, creates a LAST CHILD if move fails
+         MOVE ref FIRSTCHILD NAME lastField;            -- Try to move to the FIRST CHILD of the given name 'lastField'
+         IF NOT LASTMOVE(ref) THEN
+            CREATE LASTCHILD OF ref NAME lastField;      -- If move fails create LAST CHILD
+            SET elementsCreated = elementsCreated + 1;
+            MOVE ref LASTCHILD;
+         END IF;
+      ELSEIF navigator = '<' THEN      -- Try to move to LAST CHILD, creates a LAST CHILD if move fails
+         MOVE ref LASTCHILD NAME lastField;            -- Try to move to the LAST CHILD of the given name 'lastField'
+         IF NOT LASTMOVE(ref) THEN
+            CREATE LASTCHILD OF ref NAME lastField;      -- If move fails create LAST CHILD
+            SET elementsCreated = elementsCreated + 1;
+            MOVE ref LASTCHILD;
+         END IF;
+      ELSEIF navigator = '>' THEN      -- Try to move to FIRST CHILD, creates a FIRST CHILD if move fails
+         MOVE ref FIRSTCHILD NAME lastField;            -- Try to move to the FIRST CHILD of the given name 'lastField'
+         IF NOT LASTMOVE(ref) THEN
+            CREATE FIRSTCHILD OF ref NAME lastField;   -- If move fails create FIRST CHILD
+            SET elementsCreated = elementsCreated + 1;
+            MOVE ref FIRSTCHILD;
+         END IF;
+      ELSEIF navigator = '+' THEN      -- Adds a LAST CHILD, always creates a new element
+         CREATE LASTCHILD OF ref NAME lastField;         -- Create LAST CHILD
+         SET elementsCreated = elementsCreated + 1;
+         MOVE ref LASTCHILD;      
+      ELSE
+         CALL throw( 'Navigator MUST BE "<", ">", "+" or NULL!  "' || navigator || '" is not allowed!' );
+      END IF;
+      RETURN elementsCreated;
+   END;   
+   
+   CREATE PROCEDURE hasChild( IN ref REFERENCE, IN path CHAR) RETURNS BOOLEAN
+   -- RETURNS TRUE if "ref" has (a specific) child-element, else FALSE
+   BEGIN
+      IF countChildren( ref, path ) > 0 THEN
+         RETURN TRUE;
+      ELSE
+         RETURN FALSE;
+      END IF;
+   END;
+
+   CREATE PROCEDURE countChildren( IN ref REFERENCE, IN path CHAR) RETURNS INT
+   -- RETURNS the COUNT of (a specific) child-element
+   BEGIN
+      DECLARE ref2 REFERENCE TO ref;
+      IF path <> '' THEN      -- Has a specific child
+         DECLARE firstFields CHAR getFirstFields( path );
+         DECLARE lastField CHAR getlastField( path );
+         IF firstFields IS NOT NULL THEN
+            DECLARE firstFieldsExist BOOLEAN hasChild( ref, firstFields);
+            IF firstFieldsExist THEN
+               DECLARE elementsCreated INT moveRefReturn( ref2, firstFields );
+               IF elementsCreated <> 0 THEN
+                  CALL throw( 'This moveRef should only move ref2 to the proper reference, but not create elements!' );
+               END IF;
+            ELSE
+               RETURN 0;
+            END IF;
+         END IF;
+         RETURN CARDINALITY( ref2.{lastField}[] );
+      ELSE
+         RETURN CARDINALITY( ref2.*[] );      -- Has any child
+      END IF;
+   END;
+
+   CREATE PROCEDURE removeFieldFromChildren( IN ref REFERENCE, IN name CHAR, IN value CHAR)
+   -- Wrapper/Forwarder to removeFieldFromChildrenReturn: SPARES the RETURNS INT
+   BEGIN
+      DECLARE numberOfReplacements INT removeFieldFromChildrenReturn( ref, name, value );
+   END;
+
+   CREATE PROCEDURE removeFieldFromChildrenReturn( IN ref REFERENCE, IN name CHAR, IN value CHAR) RETURNS INT
+   -- Removes the field specified in 'name' from 'ref' AND from it's siblings
+   -- 'ref' needs to point to one of the children (in the containing structure)
+   -- 'name' is the name of the field, which needs to be removed
+   -- 'value' specifies a value that the field needs to have, in order to be removed
+   -- If 'value' is empty (''), then all fields with name 'name' get removed.
+   -- RETURNS the number of removements made
+   BEGIN
+      DECLARE numberOfRemovements INT 0;
+      CALL moveRef( ref, fullFieldname( ref ) || '[>]' ); -- Moves ref to the first sibling in the list.
+      WHILE LASTMOVE( ref ) DO
+         IF ref.{name} IS NOT NULL THEN
+            IF value = '' THEN   -- Remove all fields with the name 'name' from the children
+               SET ref.{name} = NULL;
+               SET numberOfRemovements = numberOfRemovements + 1;
+            ELSEIF ref.{name} = value THEN   -- Only remove the fields with 'name' = 'value' from the children
+               SET ref.{name} = NULL;
+               SET numberOfRemovements = numberOfRemovements + 1;
+            END IF;
+         ELSE
+            -- nothing to remove
+         END IF;
+         MOVE ref NEXTSIBLING REPEAT NAME;
+      END WHILE;
+      RETURN numberOfRemovements;
+   END;
+
+   CREATE PROCEDURE getRef(INOUT ref REFERENCE, IN field CHAR, IN value CHAR) RETURNS INT
+   -- "ref" must be set on one of the children in the list (use moveRef( ref, path ) ) !
+   -- Sets ref to the *last* ref with ref.{field} = value. Does not check for dublicates (Performance!)
+   -- RETURNS the index where the child was found, else 0
+   BEGIN
+      DECLARE ref2 REFERENCE TO ref;
+      MOVE ref2 PARENT;
+      DECLARE childrenCount INT CARDINALITY( ref2.*[] );
+      MOVE ref2 LASTCHILD;   --<-- Backwards, since hits are more likely
+      IF field <> '' THEN
+         DECLARE childrenIndex INT childrenCount;
+         WHILE LASTMOVE( ref2 ) DO
+            IF fieldHasValue( ref2, field, value ) THEN    -- Hit a ref with "field = value"
+               MOVE ref TO ref2;
+               RETURN childrenIndex;
+            END IF;
+            SET childrenIndex = childrenIndex - 1;
+            MOVE ref2 PREVIOUSSIBLING;
+         END WHILE;
+      END IF;
+      RETURN 0;
+   END;
+
+   CREATE PROCEDURE fieldHasValue( IN ref REFERENCE, IN path CHAR, IN value CHAR ) RETURNS BOOLEAN
+   -- If field "ref.path == value" then TRUE, else FALSE
+   BEGIN
+      DECLARE ref2 REFERENCE TO ref;
+      IF hasChild( ref2, path ) THEN
+         DECLARE elementsCreated INT moveRefReturn( ref2, path );
+         IF elementsCreated <> 0 THEN
+            CALL throw( 'Field ' || coalesce( path, '-null-' ) || ' (' || coalesce( fullFieldName( ref ), '-null-' ) || ') did not exist!' );
+         END IF;
+         MOVE ref2 PARENT;
+         DECLARE lastField CHAR getLastField( path );
+         IF CAST( ref2.{lastField} AS CHAR ) = value THEN
+            RETURN TRUE;
+         ELSE
+            RETURN FALSE;
+         END IF;
+      ELSE
+         RETURN FALSE;
+      END IF;   
+   END;
+
+   CREATE PROCEDURE getNavigator( INOUT path CHAR ) RETURNS CHAR
+   -- This Method is "PRIVATE": Only for moveRefReturn() and aggregateReturn()
+   -- Returns the contents of square brakets at the end of a string 'child[x]' --> RETURNS 'x'
+   -- A navigator is for accessing fields in references, so e.g. '>', '<' and '+'
+   -- NOTE: The navigator gets removed from "path" ('INOUT path CHAR') !
+   BEGIN
+      DECLARE navigator CHAR;
+      DECLARE closeBraketPosition INT LENGTH(path);
+      DECLARE closeBraket CHAR SUBSTRING( path FROM closeBraketPosition FOR 1 );
+      IF closeBraket = ']' THEN
+         DECLARE openBraketPosition INT POSITION( '[' IN path );
+         IF openBraketPosition = 0 THEN
+            CALL throw( 'Found closing braket "]" but no opening braket "[" in string "' || coalesce( path, '-null-' ) || '"!'  );
+         END IF;
+         SET navigator = SUBSTRING( path FROM openBraketPosition + 1 FOR closeBraketPosition - openBraketPosition - 1 );
+         SET path = SUBSTRING( path FROM 1 FOR openBraketPosition - 1 );
+      ELSEIF POSITION( ']' IN path ) <> 0 THEN
+         CALL throw( 'Closing braket "]" MUST BE at the end of the string "' || coalesce( path, '-null-' ) || '"!'  );
+      ELSE
+         -- RETURNS navigator=NULL
+      END IF;
+      RETURN navigator;
+   END;
+
+   CREATE PROCEDURE fullFieldname ( IN ref REFERENCE ) RETURNS CHAR
+   -- Provides the "fully qualified" reference to ref
+   -- e.g. "Root.MRM.positions.position.materialNumber"
+   BEGIN
+      DECLARE fieldname1 CHAR COALESCE( FIELDNAME( ref ), NULL );
+      MOVE ref PARENT;
+      IF LASTMOVE( ref ) THEN
+         DECLARE fieldname2 CHAR fullFieldname( ref );
+         SET fieldname1 = fieldname2 || '.' || fieldname1;
+      END IF;
+      return fieldname1;
+   END;
+
+   CREATE PROCEDURE isSameRef( IN ref REFERENCE, IN path CHAR) RETURNS BOOLEAN
+   -- ('InputRoot.MRM.order.header', 'order.header' ) --> TRUE
+   -- ('InputRoot.MRM.order.header', 'delivery.header' ) --> FALSE
+   -- ('InputRoot.MRM.order.header', '+order.header' ) --> FALSE ( a leading plus means append the path to the ref --> ALWAYS return FALSE)
+   BEGIN
+      DECLARE isSameRef BOOLEAN;
+      SET path = REPLACE( path, '[+]', '' );
+      SET path = REPLACE( path, '[<]', '' );
+      SET path = REPLACE( path, '[>]', '' );
+      IF POSITION( ']' IN path ) > 0 THEN
+         CALL throw( '"]" not allowed in "' || coalesce( path, '-null-' ) || '"!' );
+      END IF;
+      DECLARE leadingChar CHAR SUBSTRING( path FROM 1 FOR 1 );
+      IF leadingChar = '+' THEN
+         SET isSameRef = FALSE;
+      ELSE
+         DECLARE fullFieldname CHAR fullFieldname( ref );
+         DECLARE lenghtPath INT LENGTH( path );
+         SET fullFieldname = RIGHT( fullFieldname, lenghtPath );
+         IF fullFieldname = path THEN
+            SET isSameRef = TRUE;
+         ELSE
+            SET isSameRef = FALSE;
+         END IF;
+      END IF;
+      RETURN isSameRef;
+   END;
+
+   CREATE PROCEDURE fullFieldnameParent( IN field REFERENCE ) RETURNS CHAR
+   -- Input the fieldName in 'ref', e.g. 'InputRoot.MRM.positions.position.materialNumber'
+   -- Returns the path to the fieldName 'Root.MRM.positions.position'
+   BEGIN
+      DECLARE ref REFERENCE TO field;
+      MOVE ref PARENT;
+      DECLARE fullFieldnameParent CHAR fullFieldname( ref );
+      RETURN fullFieldnameParent;
+   END;
+
+   CREATE PROCEDURE getFirstFields( IN path CHAR ) RETURNS CHAR
+   -- Returns the "first fields" in a string
+   -- "ancestors...parent.child" --> "ancestors...parent"
+   -- "ancestors...parent.child[+]" --> "ancestors...parent"
+   -- "+ancestors...parent.child[+]" --> "+ancestors...parent"
+   -- "+child[+]" --> NULL
+   BEGIN
+      DECLARE pointCount INT countCharInChar( '.', path );
+      IF pointCount = 0 THEN
+         RETURN NULL;
+      END IF;
+      DECLARE lastPointPosition INT 0;
+      IF pointCount > 0 THEN
+         SET lastPointPosition = POSITION( '.' IN path REPEAT pointCount );
+      END IF;
+      DECLARE firstFields CHAR SUBSTRING( path FROM 1 FOR lastPointPosition - 1 );
+      RETURN firstFields;
+   END;
+
+   CREATE PROCEDURE getLastField( IN path CHAR ) RETURNS CHAR
+   -- Returns the last field in a string
+   -- "ancestors...parent.child" --> "child"
+   -- "ancestors...parent.child[+]" --> "child[+]"
+   -- "+ancestors...parent.child[+]" --> "child[+]"
+   -- "+child[+]" --> "child[+]"
+   BEGIN
+      DECLARE leadingChar CHAR SUBSTRING( path FROM 1 FOR 1 );
+      DECLARE pointCount INT countCharInChar( '.', path );
+      DECLARE lastPointPosition INT 0;
+      IF pointCount > 0 THEN
+         SET lastPointPosition = POSITION( '.' IN path REPEAT pointCount );
+      END IF;
+      DECLARE lastField CHAR;
+      IF pointCount > 0 THEN
+         SET lastField = SUBSTRING( path FROM lastPointPosition + 1 );   -- take last field
+      ELSEIF leadingChar = '+' THEN
+         SET lastField = SUBSTRING( path FROM 2 );                  -- truncate leading char
+      ELSE
+         SET lastField = path;                                 -- there is only one field
+      END IF;
+      RETURN lastField;
+   END;
+

@@ -1,0 +1,29 @@
+ CREATE PROCEDURE aggregate(INOUT ref REFERENCE, IN path CHAR, IN field CHAR, IN value CHAR)
+   -- Wrapper/Forwarder to aggregateReturn: SPARES the RETURNS INT
+   BEGIN
+      DECLARE numberOfCreations INT aggregateReturn( ref, path, field, value );
+   END;
+   
+   CREATE PROCEDURE aggregateReturn(INOUT ref REFERENCE, IN path CHAR, IN field CHAR, IN value CHAR) RETURNS INT
+   -- This method will find a certain reference or create a new one (if no reference could be found)
+   -- This will either return the ref with materialNumber='A1000' or create a new ref (and return that):
+   --       aggregate( ref, 'positions.position', 'materialNumber', 'A1000' )
+   -- RETURNS the number of field-creations !
+   BEGIN
+      DECLARE pathWithNavigator CHAR path;
+      DECLARE navigator CHAR getNavigator( path );
+      IF navigator IS NOT NULL THEN
+         CALL throw( 'You can not use a navigator "' || coalesce( navigator, '-null-' ) || '" here "' || coalesce( pathWithNavigator, '-null-' ) || '"!' );
+      END IF;
+      DECLARE elementsCreated INT moveRefReturn( ref, path );      -- This ensures that "ref" points to one of the children
+      DECLARE foundChildAtPos INT 0;
+      IF field <> '' THEN
+         SET foundChildAtPos = getRef( ref, field, value);
+      END IF;
+      IF ( foundChildAtPos = 0 OR field = '' )
+         AND elementsCreated = 0      -- If the parent didn't have any child, then the 'moveRefReturn( ref, path ) will have created one by now!
+      THEN
+         SET elementsCreated = moveRefReturn( ref, path || '[+]' );   -- CREATE a new ref
+      END IF;
+      RETURN elementsCreated;
+   END;
