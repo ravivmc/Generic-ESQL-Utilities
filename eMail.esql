@@ -1,0 +1,58 @@
+
+
+
+CREATE PROCEDURE msgTree2EMailLines (IN root REFERENCE, IN rOutputRoot REFERENCE, IN depth INT)
+   -- Creates eMail lines to be sent with sendMail-PlugIn (IA07)  
+
+   BEGIN
+      DECLARE cursor REFERENCE TO root;
+      DECLARE lineIndex INT CARDINALITY( rOutputRoot.XML.Message.Body.Line[] ) + 1;
+      IF lineIndex < 1000 THEN
+         IF CARDINALITY (cursor.*[]) = 0 THEN -- IF the Element has no children, then it is a leaf
+            DECLARE whiteSpace CHAR REPLICATE( '  ', depth );
+            DECLARE fieldName1 CHAR FIELDNAME( cursor );
+            DECLARE fieldValue1 CHAR coalesce( cursor, '');
+            IF fieldName1 <> '' THEN
+               CALL insertEMailLine( rOutputRoot, whiteSpace || fieldName1 || ' = ' || fieldValue1 );
+               SET lineIndex = lineIndex + 1;
+            ELSE
+               CALL insertEMailLine( rOutputRoot, 'TEST' || rOutputRoot.XML.Message.Body.Line[lineIndex] || ' = ' || fieldValue1 );
+            END IF;
+         ELSE -- If has children then loop through the children, then it is a node in the tree
+            DECLARE whiteSpace CHAR REPLICATE( '  ', depth );
+            DECLARE fieldName1 CHAR FIELDNAME( cursor );
+            DECLARE fieldValue1 CHAR coalesce( cursor, '*NULL*');         
+            IF fieldValue1 = '*NULL*' THEN
+               CALL insertEMailLine( rOutputRoot, whiteSpace || fieldName1 );
+            SET lineIndex = lineIndex + 1;
+            ELSE
+               CALL insertEMailLine( rOutputRoot, whiteSpace || fieldName1 || ' = ' || fieldValue1 );
+               SET lineIndex = lineIndex + 1;
+            END IF;
+             MOVE cursor FIRSTCHILD;
+            WHILE LASTMOVE(cursor) DO
+               CALL msgTree2EMailLines(cursor, rOutputRoot, depth + 1);
+               MOVE cursor NEXTSIBLING;
+            END WHILE;
+         END IF;
+      ELSE
+         IF rOutputRoot.XML.Message.Body.Line[lineIndex - 1] <> '-------Message too long-------' THEN
+            SET rOutputRoot.XML.Message.Body.Line[lineIndex] = '-------Message too long-------';
+         END IF;
+      END IF;
+   END;
+   
+   CREATE PROCEDURE insertEMailLine (IN rOutputRoot REFERENCE, IN text CHAR)    
+   BEGIN
+      DECLARE lineIndex INT CARDINALITY( rOutputRoot.XML.Message.Body.Line[] ) + 1;      
+      IF lineIndex < 5001 THEN
+         IF LENGTH( text ) > 1000 THEN   -- Trim eMail-lines which are too long
+            SET text = SUBSTRING( text FROM 1 FOR 1000) || '[...]'; 
+         END IF;
+         SET rOutputRoot.XML.Message.Body.Line[lineIndex] = text;
+      ELSEIF lineIndex = 5001 THEN   -- eMail has enough email-lines
+         SET rOutputRoot.XML.Message.Body.Line[ 5000 ] = '-------eMail too long-------';      
+      ELSE
+         CALL throw( '"lineIndex" CANNOT BE greater than 5001, but it is "' || CAST( lineIndex AS CHAR ) || '"!' );
+      END IF;
+   END;

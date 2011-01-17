@@ -1,4 +1,53 @@
+
+
    CREATE PROCEDURE throw(IN exceptionText CHAR)      -- Throws an exception
    BEGIN
       THROW USER EXCEPTION Message 3012 VALUES( exceptionText );
    END; 
+
+   
+   CREATE PROCEDURE insertException ( IN exceptionRef REFERENCE, IN outputRoot REFERENCE )
+   -- Creates custom Error Messages or returns a generic one
+   -- Use REPLACE('Error on Port $1, Server $2', CAST( 1234 AS CHAR ), '123.45.67.89' ) to create proper ErrorMsgs
+   BEGIN
+      DECLARE exceptionType CHAR;      
+      -- Parse the Exception for the last Error
+      WHILE(   FIELDNAME(exceptionRef.*[<]) = 'RecoverableException' or
+            FIELDNAME(exceptionRef.*[<]) = 'ParserException' or
+            FIELDNAME(exceptionRef.*[<]) = 'DatabaseException' or
+            FIELDNAME(exceptionRef.*[<]) = 'UserException' or
+            FIELDNAME(exceptionRef.*[<]) = 'ConvertionException' )
+      DO
+         SET exceptionType = FIELDNAME( exceptionRef.*[<] );
+         MOVE exceptionRef TO exceptionRef.*[<];         
+      END WHILE;
+      DECLARE exceptionNumber INT exceptionRef.Number;
+      IF exceptionType = 'ParserException' THEN
+         IF exceptionNumber IN ( 5304 ) THEN      -- RM Dictionary not Found.
+            CALL insertEMailLine( outputRoot, coalesce( exceptionRef.Text, '- Text is null -' ) || ' (' || coalesce( exceptionRef.Insert[3].Text, '- Text is null -' ) || ')' );
+         ELSE
+            CALL insertEMailLine( outputRoot, coalesce( exceptionRef.*[<].Text, '- Text is null -' ) );
+         END IF;
+      ELSEIF exceptionType = 'DatabaseException' THEN
+         IF exceptionNumber = 2322 THEN      -- Unique Constraint violated
+            CALL insertEMailLine( outputRoot, coalesce( exceptionRef.*[<].Text, '- Text is null -' ) );
+         ELSE
+            CALL insertEMailLine( outputRoot, coalesce( exceptionRef.*[<].Text, '- Text is null -' ) );
+         END IF;
+      ELSEIF exceptionType = 'UserException' THEN
+         IF exceptionNumber = 3012 THEN      -- User generated Exception
+            CALL insertEMailLine( outputRoot, coalesce( exceptionRef.*[<].Text, '- Text is null -' ) );
+         ELSE
+            CALL insertEMailLine( outputRoot, coalesce( exceptionRef.*[<].Text, '- Text is null -' ) );
+         END IF;
+      ELSEIF exceptionType = 'ConvertionException' THEN
+--         IF exceptionNumber =  THEN
+--            CALL insertEMailLine( outputRoot, coalesce( exceptionRef.*[<].Text, '- Text is null -' ) );
+--         ELSE
+            CALL insertEMailLine( outputRoot, coalesce( exceptionRef.*[<].Text, '- Text is null -' ) );
+--         END IF;
+      ELSE         
+         CALL msgTree2EMailLines( exceptionRef, outputRoot, 0 );         
+      END IF;      
+   END;
+   
