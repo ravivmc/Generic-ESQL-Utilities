@@ -1,0 +1,1 @@
+<message><header date="2010-03-17" time="16:02.123" /><order orderNumber="A1001"><position materialNumber="A" quantity="50"><subPos batch="1" quantity="5" /><subPos batch="1" quantity="15" /><subPos batch="2" quantity="30" /></position><position materialNumber="A" quantity="10" /><position materialNumber="B" quantity="15" /></order></message>
