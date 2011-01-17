@@ -4,7 +4,7 @@ For Message Broker 6, 6.1 and 7
 Motivation: 
 When you use Message Broker you might find out that ESQL-Code probably is the best utility to use when tranforming messages. It is specialized and well fitted for the task, it is quick in transforming messages due to it's c-code-base and changes are easier trackable in source control than with graphical- or XML-based nodes. And ...most importantly... it allows you to code around and debug the tricky parts which other transformation nodes wouldn't let you do that easily.
 
-If you agree with that then there only are some missing function that you'd just like to have in ESQL itself. I want to list these functions in hope IBM puts them nativly into ESQL or at least to promote sharing of these functions so that they are not lacking or need to be reimplemented on each project:
+If you agree with that then there only are some missing function that you'd just like to have in ESQL itself. I want to list these functions to promote sharing of these functions so that they are not lacking or need to be reimplemented on each project:
 
 (1) references.esql: Utilities for reference handling. E.g. MOVE REF should be extended to allow moving along full paths (not just single elements). There should be a flexible syntax "language" to do different things (append, start from root, go to first element, go to last, ...)
 
