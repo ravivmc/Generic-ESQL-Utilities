@@ -7,7 +7,7 @@
 
    
    CREATE PROCEDURE insertException ( IN exceptionRef REFERENCE, IN outputRoot REFERENCE )
-   -- Creates custom Error Messages or returns a generic one
+   -- Transforms Broker-Exceptions into eMailLines to be sent wih IA07 (sentMail-PlugIn)
    -- Use REPLACE('Error on Port $1, Server $2', CAST( 1234 AS CHAR ), '123.45.67.89' ) to create proper ErrorMsgs
    BEGIN
       DECLARE exceptionType CHAR;      
