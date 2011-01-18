@@ -1,7 +1,5 @@
-
-Generic ESQL-Utilities for IBM Message Broker
-
-For Message Broker 6, 6.1 and 7
+<b>Generic ESQL-Utilities for IBM Message Broker</b>
+For Message Broker 6, 6.1, 7 and 7.1
 
 Motivation: 
 When you use Message Broker you might find out that ESQL-Code probably is the best utility to use when tranforming messages. It is specialized and well fitted for the task, it is quick in transforming messages due to it's c-code-base and changes are easier trackable in source control than with graphical- or XML-based nodes. And ...most importantly... it allows you to code around and debug the tricky parts which other transformation nodes wouldn't let you do that easily.
