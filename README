@@ -1,41 +1,7 @@
 Generic ESQL-Utilities for IBM Message Broker
 For Message Broker 6, 6.1, 7 and 7.1
 
-Motivation: 
-When you use Message Broker you might find out that ESQL-Code probably is the best utility to use when tranforming messages. It is specialized and well fitted for the task, it is quick in transforming messages due to it's c-code-base and changes are easier trackable in source control than with graphical- or XML-based nodes. And ...most importantly... it allows you to code around and debug the tricky parts which other transformation nodes wouldn't let you do that easily.
-
-If you agree with that then there only are some missing function that you'd just like to have in ESQL itself. I want to list these functions to promote sharing of these functions so that they are not lacking or need to be reimplemented on each project:
-
-(1) references.esql: Utilities for reference handling. E.g. MOVE REF should be extended to allow moving along full paths (not just single elements). There should be a flexible syntax "language" to do different things (append, start from root, go to first element, go to last, ...)
-
-(2) strings.esql: There should be more String-Manipulationfunctions based on the ones existing in Message Broker like
-
-(2.1) countCharInChar
-(2.2) xml2Env
-(2.3) isAlphanumeric, isAlphaOrNumeric, isFieldReference, isIdentifier, isNumeric, containsCharsOnly
-(2.4) getSubstring
-(2.5) padding
-
-(3) aggregate.esql: In-Message-Aggregation should be supported by a utility function "AGGREGATE(ref, path, field, value)"
-
-(4) SORT() should be included (based on quick sort and using the extended MOVE REF internally).
-
-(5) EMAILING of Messages should be better supported including various forms of attaching the Message and flexible definition of eMail-Recipiens:
-
-(5.1) Attachments:
-(5.1.1) There should be a checkBox to attach the MsgTree as xml. Currently there is the need for coding and creating a proper Blob.
-(5.1.2) There should be a checkBox to attach the MsgTree using an MRM definition
-(5.1.3) There should be a checkBox to attach the MsgTree as text within the body (some code for IA07)
-(5.1.4) There should be a checkBox to attach the MsgTree flattend down to a file "CSV", e.g. for opening in MS-Excel.
-
-(5.2) Recipients
-(5.2.1) There are regular: e.g. "someone@mqseries.net" but there should also be groups: e.g. "myRecipientsList1", which gets resolved by a db-lookup
-
-[... more to follow]
-
-If someone comes up with more good utilities I am happy if you can enhance the code or we can collaborate on github.
-
-Also check out my webpage http://www.mqsiuser.net.
-
-cheers,
-mqsiuser
+Install instructions:
+1. Download the code with the "Downloads"-Button on the upper right. 
+2. Extract and import "as a project" into your Message Broker Toolkit. There should be no errors (red crosses) in Eclipse after the import. 
+3. Reference the project from your existing projects and start using the ESQL-PROCEDUREs.
