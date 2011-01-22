@@ -1,14 +1,14 @@
 BROKER SCHEMA examples.quickSort
 
-CREATE COMPUTE MODULE quickSort1_quickSort1
+CREATE COMPUTE MODULE DateSort_Transform
   CREATE FUNCTION Main() RETURNS BOOLEAN
   BEGIN
-    CALL CopyMessageHeaders();       
+    CALL CopyMessageHeaders();		
     SET OutputRoot.XMLNSC.message.(XML.Attribute)timeStamp = CAST( CURRENT_TIMESTAMP AS CHAR FORMAT 'yyyy-MM-dd HH:mm:ss' );
     DECLARE rOut REFERENCE TO OutputRoot.XMLNSC.message;
-    CREATE LASTCHILD OF rOut NAME 'list'; MOVE rOut LASTCHILD;         
-    CALL quickSort( InputRoot.XMLNSC.message.list, rOut, 'element', 'value', '', TRUE );
-    RETURN TRUE; 
+    CREATE LASTCHILD OF rOut NAME 'list'; MOVE rOut LASTCHILD;			
+    CALL quickSort( InputRoot.XMLNSC.message.list, rOut, 'element', 'value', 'yyyy-MM-dd HH:mm:ss', FALSE );		
+    RETURN TRUE;
   END;
 
   CREATE PROCEDURE CopyMessageHeaders() BEGIN

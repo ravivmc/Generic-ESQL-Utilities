@@ -1,14 +1,14 @@
 BROKER SCHEMA examples.quickSort
 
-CREATE COMPUTE MODULE quickSort1_quickSort1
+CREATE COMPUTE MODULE AlphaNumericSort_Transform
   CREATE FUNCTION Main() RETURNS BOOLEAN
   BEGIN
-    CALL CopyMessageHeaders();       
+    CALL CopyMessageHeaders();		
     SET OutputRoot.XMLNSC.message.(XML.Attribute)timeStamp = CAST( CURRENT_TIMESTAMP AS CHAR FORMAT 'yyyy-MM-dd HH:mm:ss' );
     DECLARE rOut REFERENCE TO OutputRoot.XMLNSC.message;
-    CREATE LASTCHILD OF rOut NAME 'list'; MOVE rOut LASTCHILD;         
-    CALL quickSort( InputRoot.XMLNSC.message.list, rOut, 'element', 'value', '', TRUE );
-    RETURN TRUE; 
+    CREATE LASTCHILD OF rOut NAME 'list'; MOVE rOut LASTCHILD;			
+    CALL quickSort( InputRoot.XMLNSC.message.list, rOut, 'element', 'value', '', TRUE );		
+    RETURN TRUE;
   END;
 
   CREATE PROCEDURE CopyMessageHeaders() BEGIN
@@ -21,7 +21,4 @@ CREATE COMPUTE MODULE quickSort1_quickSort1
     END WHILE;
   END;
 
-  CREATE PROCEDURE CopyEntireMessage() BEGIN
-    SET OutputRoot = InputRoot;
-  END;
 END MODULE;
