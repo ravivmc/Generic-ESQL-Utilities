@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>MyMessageFlowProject</name>
+	<name>GenericESQLUtilities</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -30,9 +30,15 @@
 			<arguments>
 			</arguments>
 		</buildCommand>
+		<buildCommand>
+			<name>com.ibm.etools.mft.bar.barbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
 	</buildSpec>
 	<natures>
 		<nature>com.ibm.etools.mft.flow.messageflownature</nature>
 		<nature>com.ibm.etools.mft.bar.ext.barnature</nature>
+		<nature>com.ibm.etools.mft.bar.barnature</nature>
 	</natures>
 </projectDescription>
