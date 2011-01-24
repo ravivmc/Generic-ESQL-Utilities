@@ -1,0 +1,34 @@
+
+   CREATE PROCEDURE xml2Env ( IN rEnv REFERENCE, IN xmlString CHAR )
+   -- Converts an xml-Tree and puts it into the environment:
+   -- <xml><a></a><b></b></xml> --> xml(a, b)
+   BEGIN
+      -- Trim whitespace and crlf from the xml:
+      DECLARE trimedXmlString CHAR TRIM( ' ' FROM xmlString );
+      SET trimedXmlString = TRIM( crlf() from trimedXmlString );
+      IF trimedXmlString IS NULL OR trimedXmlString = '' THEN
+         -- ignore emtpy or null strings
+      ELSEIF POSITION( '<' IN xmlString ) = 0 THEN      -- just plain Text
+         SET rEnv = xmlString;
+      ELSE                                    -- xml
+         DECLARE startTag1 INT POSITION( '<' IN trimedXmlString );
+         DECLARE startTag2 INT POSITION( '>' IN trimedXmlString );         
+         DECLARE beforeXML CHAR SUBSTRING( trimedXmlString FROM 1 FOR startTag1 - 1 );
+         CALL xml2Env ( rEnv, beforeXML );         
+         DECLARE tagName CHAR SUBSTRING( trimedXmlString FROM startTag1 + 1 FOR startTag2 - startTag1 - 1 );
+         DECLARE startTag CHAR '<' || tagName || '>';
+         DECLARE endTag CHAR '</' || tagName || '>';   
+         DECLARE endTag1 INT POSITION( endTag in trimedXmlString );
+         IF endTag1 IS NULL OR endTag1 = 0 THEN
+            CALL throw( 'Found no end tag ("</' || tagName || '>") for start tag "<' || tagName || '>": ' || crlf() || crlf() || '  "' || xmlString || '"' || crlf() || crlf() ||   'Please check if the xml is valid!' );
+         END IF;
+         DECLARE endTag2 INT endTag1 + LENGTH( tagName ) + 3;         
+         DECLARE inXML CHAR SUBSTRING( trimedXmlString FROM startTag2 + 1 FOR endTag1 - startTag2 - 1 );
+         CREATE LASTCHILD OF rEnv NAME tagName;
+         MOVE rEnv LASTCHILD;
+         CALL xml2Env ( rEnv.{tagName}, inXML );
+         MOVE rEnv PARENT;         
+         DECLARE afterXML CHAR SUBSTRING( trimedXmlString FROM endTag2 );
+         CALL xml2Env ( rEnv, afterXML );         
+      END IF;      
+   END;
