@@ -1,10 +1,10 @@
 BROKER SCHEMA examples.sort
 
-CREATE COMPUTE MODULE sort1_Transform
+CREATE COMPUTE MODULE sort2_Transform
 	CREATE FUNCTION Main() RETURNS BOOLEAN
 	BEGIN
 		SET OutputRoot = InputRoot;
-		CALL sort(OutputRoot.XMLNSC.message.list, 'element', 'value', '', TRUE );
+		CALL sort(OutputRoot.XMLNSC.message.list, 'element', 'value', 'INT', FALSE );
 		RETURN TRUE;
 	END;
 

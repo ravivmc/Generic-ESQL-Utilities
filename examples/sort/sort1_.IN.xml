@@ -1,0 +1,13 @@
+<message>
+  <header date="2010-03-17" time="16:02.123"/>
+  <list>
+    <element value="BCD">
+      <a>a</a>
+    </element>
+    <element value="ABC">
+      <a>a</a>
+    </element>
+  </list>
+</message>
+
+

@@ -1,0 +1,17 @@
+<message>
+	<header date="2010-03-26" time="11:31.000"/>
+	<list>
+		<element>
+			<child value="12"/>
+		</element>
+		<element>
+			<child value="15"/>
+		</element>
+		<element>
+			<child value="134"/>
+		</element>
+		<element>
+			<child value="1456"/>
+		</element>
+	</list>
+</message>

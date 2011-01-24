@@ -1,14 +1,9 @@
 <message>
-  <header date="2010-03-26" time="11:31.000"/>
+  <header date="2010-03-17" time="16:02.123"/>
   <list>
-    <element><child value="134"/></element>
-    <element><child value="1456"/></element>
-    <element><child value="12"/></element>
-    <element><child value="15"/></element>
+    <element value="BCD"/>
+    <element value="ABC"/>
+    <element value="BC"/>
+    <element value="A"/>
   </list>
 </message>
-
-
-
-
-
