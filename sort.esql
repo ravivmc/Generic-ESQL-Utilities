@@ -1,21 +1,29 @@
-  CREATE PROCEDURE sort( IN rIn REFERENCE, INOUT rOut REFERENCE, IN sibling CHAR, IN element CHAR, IN typeCast CHAR, IN ascending BOOLEAN)
-  -- rIn: A Reference to the structure, which currently embeds the unordered siblings
-  -- rOut: A Reference to the structure, which will then embed the ordered siblings
+  
+  CREATE PROCEDURE sort( IN refList REFERENCE, IN sibling CHAR, IN element CHAR, IN typeCast CHAR, IN ascending BOOLEAN)
+  -- refList: A Reference to the structure, which currently embeds the unordered siblings
   -- siblings: The name of the siblings (to be sorted): e.g. 'element'
   -- element: The Field which will be compared: e.g. 'child.value'
   -- typeCast: Type-Cast to proper Type: '' (No Cast), 'INT' (Integer), else 'yyyy-MM-dd HH:mm:ss' (TIMESTAMP)
   -- ascending: Sort in ascending order if TRUE, else descending order
   BEGIN
+ 	DECLARE rIn REFERENCE TO refList;DECLARE recDepth INT 0;
     DECLARE finished BOOLEAN FALSE;DECLARE backOut BOOLEAN FALSE;
-    DECLARE rRoot REFERENCE TO rIn;DECLARE recDepth INT 0;
     WHILE NOT finished DO       
      IF FIELDNAME(rIn)='equal' THEN
+        DECLARE ref REFERENCE TO rIn;
         MOVE rIn FIRSTCHILD NAME sibling;
-        WHILE LASTMOVE( rIn ) DO
-          CALL copyElem( rIn, rOut, sibling );
+        DECLARE doWhile BOOLEAN LASTMOVE( rIn );
+        WHILE doWhile DO
+          DECLARE rTmp REFERENCE TO rIn;
           MOVE rIn NEXTSIBLING REPEAT NAME;
+          IF NOT LASTMOVE(rIn) THEN
+          	MOVE rIn PARENT;
+          	SET doWhile=FALSE;
+          END IF;
+          DETACH rTmp;ATTACH rTmp TO refList AS LASTCHILD;
         END WHILE;
-        MOVE rIn PARENT;DECLARE rTmp REFERENCE TO rIn;MOVE rIn PARENT;--SET rTmp = NULL;
+        MOVE rIn PARENT;
+        SET ref = NULL;
         MOVE rIn FIRSTCHILD NAME 'lower';
       ELSE
         DECLARE rPivot REFERENCE TO rIn;
@@ -25,20 +33,20 @@
         ELSE
           MOVE rPivot NEXTSIBLING REPEAT NAME;
           IF NOT LASTMOVE(rPivot) THEN
-            CALL copyElem( rPivot, rOut, sibling );
+            DETACH rPivot; ATTACH rPivot TO refList AS LASTCHILD;
             SET backOut=TRUE;
           ELSE
             IF recDepth > 20 THEN -- Recursion-Tree probably/likely degenerated
               DECLARE siblingCount INT CARDINALITY( rIn.{sibling}[] ); -- Note that CARDINALITY can be bad for performance
               MOVE rPivot TO rIn.{sibling}[ (siblingCount+1)/2 ]; -- Select pivot-element from the middle
             END IF;
-            DECLARE rPiv REFERENCE TO rPivot; CALL moveRef(rPiv, element);
+            DECLARE rPiv REFERENCE TO rPivot; CALL moveRefExisting(rPiv, element);
             DECLARE rUpper REFERENCE TO rIn;CALL moveRef(rUpper, '+upper');
             DECLARE rEqual REFERENCE TO rIn;CALL moveRef(rEqual, '+equal');
             DECLARE rLower REFERENCE TO rIn;CALL moveRef(rLower, '+lower');
             DECLARE isSmaller BOOLEAN; DECLARE isBigger BOOLEAN; MOVE rIn FIRSTCHILD NAME sibling;
             WHILE LASTMOVE( rIn ) DO
-			  DECLARE rElem REFERENCE TO rIn; CALL moveRef(rElem, element);
+			  DECLARE rElem REFERENCE TO rIn; CALL moveRefExisting(rElem, element);
               IF typeCast = '' THEN
                 SET isSmaller = rElem < rPiv;
                 SET isBigger = rElem > rPiv;
@@ -49,14 +57,15 @@
                 SET isSmaller = CAST( rElem AS TIMESTAMP FORMAT typeCast ) < CAST ( rPiv AS TIMESTAMP FORMAT typeCast );
                 SET isBigger = CAST( rElem AS TIMESTAMP FORMAT typeCast ) > CAST ( rPiv AS TIMESTAMP FORMAT typeCast );
               END IF;
-              IF ascending AND isSmaller OR NOT ascending AND isBigger THEN               
-                CALL copyElem( rIn, rUpper, sibling );
-              ELSEIF ascending AND isBigger OR NOT ascending AND isSmaller THEN
-                CALL copyElem( rIn, rLower, sibling );
-              ELSE -- is Equal
-                CALL copyElem( rIn, rEqual, sibling );
-              END IF;
+              DECLARE rCur REFERENCE TO rIn;
               MOVE rIn NEXTSIBLING REPEAT NAME;
+              IF ascending AND isSmaller OR NOT ascending AND isBigger THEN               
+                DETACH rCur; ATTACH rCur TO rUpper AS LASTCHILD;
+              ELSEIF ascending AND isBigger OR NOT ascending AND isSmaller THEN
+                DETACH rCur;ATTACH rCur TO rLower AS LASTCHILD;
+              ELSE -- is Equal
+                DETACH rCur;ATTACH rCur TO rEqual AS LASTCHILD;
+              END IF;
             END WHILE;
             MOVE rIn TO rUpper; SET recDepth = recDepth + 1;
           END IF;
@@ -65,10 +74,10 @@
       IF backOut THEN  -- Backs Out from recursion
         DECLARE doLoop BOOLEAN TRUE; SET backOut = FALSE;
         WHILE doLoop DO
-          DECLARE rTmp REFERENCE TO rIn;MOVE rIn PARENT;--SET rTmp = NULL;
+          DECLARE rTmp REFERENCE TO rIn;MOVE rIn PARENT;SET rTmp = NULL;
           IF FIELDNAME(rTmp)='upper' THEN
             MOVE rIn FIRSTCHILD NAME 'equal';SET doLoop = FALSE;
-          ELSEIF rIn=rRoot THEN
+          ELSEIF rIn=refList THEN
              SET finished = TRUE;SET doLoop = FALSE;
           ELSEIF FIELDNAME(rTmp)='lower' THEN
             SET recDepth = recDepth - 1;
@@ -76,10 +85,4 @@
         END WHILE;
       END IF;
     END WHILE;
-  END;
-   
-  CREATE PROCEDURE copyElem( IN rIn REFERENCE, INOUT rOut REFERENCE, IN sibling CHAR)
-  BEGIN
-    CREATE LASTCHILD OF rOut NAME sibling;MOVE rOut LASTCHILD;
-    SET rOut = rIn;MOVE rOut PARENT;
   END;
