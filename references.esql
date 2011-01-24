@@ -2,7 +2,16 @@
    -- This function is a wrapper/forwarder to moveRefReturn and spares the "RETURNS INT" !
    BEGIN
       DECLARE elementsCreated INT moveRefReturn( ref, path );
-   END;   
+   END;
+   
+   CREATE PROCEDURE moveRefExisting( INOUT ref REFERENCE, IN path CHAR )
+   -- This function moves the ref and also validates the existence of ref and path.
+   BEGIN
+      DECLARE elementsCreated INT moveRefReturn( ref, path );
+      IF elementsCreated <> 0 THEN
+        CALL throw( '"' || COALESCE( fullFieldname(ref), '-null-') || '" is missing a child called "' || path  || '".');
+      END IF;
+   END;
 
    CREATE PROCEDURE moveRefReturn( INOUT ref REFERENCE, IN path CHAR ) RETURNS INT
    -- This function navigates to an esql-reference
