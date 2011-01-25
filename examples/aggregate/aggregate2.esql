@@ -35,7 +35,7 @@ CREATE COMPUTE MODULE aggregate2_aggregate2
                
                CALL aggregate( rOutSubPos, 'subPos' , 'batch', rInSubPos.batch );
             
-               SET rOutSubPos.(XML.Element)batch = rInSubPos.batch;
+               SET rOutSubPos.batch = rInSubPos.batch;
                SET rOutSubPos.quantity = CAST( rInSubPos.quantity AS INT ) + COALESCE( CAST( rOutSubPos.quantity AS INT ), 0);
    
                MOVE rInSubPos NEXTSIBLING REPEAT NAME;

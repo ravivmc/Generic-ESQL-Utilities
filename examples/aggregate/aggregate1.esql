@@ -16,7 +16,7 @@ CREATE COMPUTE MODULE aggregate1_aggregate1
       WHILE LASTMOVE( rInOrder ) DO
 
          CALL moveRef( rOutOrder, 'XMLNSC.message.orders.order' );                     
-         SET rOutOrder.(XML.Element)orderNumber = rInOrder.orderNumber;
+         SET rOutOrder.orderNumber = rInOrder.orderNumber;
          
          DECLARE rOutPos REFERENCE TO rOutOrder;
          DECLARE rInPos REFERENCE TO rInOrder.positions;
@@ -25,8 +25,8 @@ CREATE COMPUTE MODULE aggregate1_aggregate1
             
             CALL aggregate( rOutPos, 'positions.position' , 'materialNumber', rInPos.materialNumber );
          
-            SET rOutPos.(XML.Element)materialNumber = rInPos.materialNumber;
-            SET rOutPos.(XML.Element)quantity = CAST( rInPos.quantity AS INT ) + COALESCE( CAST( rOutPos.quantity AS INT ), 0);
+            SET rOutPos.materialNumber = rInPos.materialNumber;
+            SET rOutPos.quantity = CAST( rInPos.quantity AS INT ) + COALESCE( CAST( rOutPos.quantity AS INT ), 0);
 
             MOVE rInPos NEXTSIBLING REPEAT NAME;
          END WHILE;

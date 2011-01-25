@@ -4,11 +4,11 @@
     nsPrefix="examples_aggregate_aggregate1.msgflow">
   <eClassifiers xmi:type="eflow:FCMComposite" name="FCMComposite_1">
     <eSuperTypes href="http://www.ibm.com/wbi/2005/eflow#//FCMBlock"/>
-    <translation xmi:type="utility:TranslatableString" key="aggregate1" bundleName="examples/aggregate/aggregate1" pluginId="MyMessageFlowProject"/>
-    <colorGraphic16 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/MyMessageFlowProject/icons/full/obj16/aggregate1.gif"/>
-    <colorGraphic32 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/MyMessageFlowProject/icons/full/obj30/aggregate1.gif"/>
+    <translation xmi:type="utility:TranslatableString" key="aggregate1" bundleName="examples/aggregate/aggregate1" pluginId="GenericESQLUtilities"/>
+    <colorGraphic16 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/GenericESQLUtilities/icons/full/obj16/aggregate1.gif"/>
+    <colorGraphic32 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/GenericESQLUtilities/icons/full/obj30/aggregate1.gif"/>
     <composition>
-      <nodes xmi:type="ComIbmMQInput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_1" location="60,62" queueName="IN">
+      <nodes xmi:type="ComIbmMQInput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_1" location="60,62" queueName="IN" messageDomainProperty="XMLNSC">
         <translation xmi:type="utility:ConstantString" string="IN"/>
       </nodes>
       <nodes xmi:type="ComIbmMQOutput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_2" location="317,63" queueName="OUT">
@@ -21,6 +21,5 @@
       <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_2" targetNode="FCMComposite_1_2" sourceNode="FCMComposite_1_3" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
     </composition>
     <propertyOrganizer/>
-    <stickyBoard/>
   </eClassifiers>
 </ecore:EPackage>
