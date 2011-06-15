@@ -1,4 +1,4 @@
-(The MIT License)
+(The MIT License, OTHER open source licenses can be requested if needed)
 
 Generic ESQL Utilities for IBM Message Broker
 Copyright (C) 2010-2011 by Nico Hiller, nico.hiller@gmail.com
