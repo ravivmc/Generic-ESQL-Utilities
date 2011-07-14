@@ -1,10 +1,10 @@
    CREATE PROCEDURE xml2Env ( IN rEnv REFERENCE, IN xmlString CHAR )
    -- Converts a xml-Tree and puts it into the environment:
    -- "<xml><a>value1</a><b>value2</b></xml>" --> According (message-)tree is put into rEnv
-   -- Uses "simple" XML, which is "elements only" (no attributes, no namespaces)
+   -- Uses "simple" XML(-string), which is "elements only" (no attributes, no namespaces)
    -- Tolerates plain text: If just plain text is passed in, then this is put into rEnv
    -- Copes with "multiple" root elements, e.g. "<a>value1</a><b>value2</b>" will be parsed (and put in rEnv)
-   -- Works with human readable (pretty print) xml (line breaks and whitespaces used for formatting the xmlString)
+   -- Works with human readable (pretty print) xml (line breaks and whitespaces used for formatting the xmlString is allowed)
    BEGIN
       -- Trim whitespace and crlf from the xml:
       DECLARE trimedXmlString CHAR TRIM( ' ' FROM xmlString );
