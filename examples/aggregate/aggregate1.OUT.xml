@@ -4,10 +4,7 @@
     <order orderNumber="A1001">
       <positions>
         <position materialNumber="A">
-          <quantity>5</quantity>
-        </position>
-        <position materialNumber="A">
-          <quantity>10</quantity>
+          <quantity>15</quantity>
         </position>
         <position materialNumber="B">
           <quantity>15</quantity>
