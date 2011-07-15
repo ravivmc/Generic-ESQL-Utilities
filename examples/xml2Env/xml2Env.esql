@@ -10,7 +10,7 @@ CREATE COMPUTE MODULE xml2Env_Transform
 		SET Environment.example2 = '';		
 		CALL xml2Env(Environment.example2, '<x>value1</x><y>value2</y><z>value3</z>');	-- Multiple root elements
 		SET Environment.example3 = '';
-		CALL xml2Env(Environment.example3, 'Just a string');							-- String only
+		CALL xml2Env(Environment.example3, 'Just a string');				-- String only
 
 		-- Do your processing next:
 		SET OutputRoot = InputRoot;		-- no processing in the example
