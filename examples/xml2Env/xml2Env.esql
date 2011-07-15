@@ -1,0 +1,24 @@
+BROKER SCHEMA examples.xml2Env
+
+
+CREATE COMPUTE MODULE xml2Env_Transform
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		
+		SET Environment.example1 = '';
+		CALL xml2Env(Environment.example1, '<xml><a>value1</a><b>value2</b></xml>');	-- Simple xml
+		SET Environment.example2 = '';		
+		CALL xml2Env(Environment.example2, '<x>value1</x><y>value2</y><z>value3</z>');	-- Multiple root elements
+		SET Environment.example3 = '';
+		CALL xml2Env(Environment.example3, 'Just a string');							-- String only
+
+		-- Do your processing next:
+		SET OutputRoot = InputRoot;		-- no processing in the example
+		
+		RETURN TRUE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		
+	END;
+END MODULE;
