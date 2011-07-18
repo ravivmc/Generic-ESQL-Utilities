@@ -1,0 +1,178 @@
+
+DECLARE sendTo EXTERNAL CHAR 'myRecipient@email.com';
+DECLARE subject EXTERNAL CHAR 'An exception occured';
+
+DECLARE includeException EXTERNAL BOOLEAN TRUE;
+DECLARE includeExceptionList EXTERNAL BOOLEAN FALSE;
+
+DECLARE includeOriginalMsg EXTERNAL BOOLEAN TRUE;
+DECLARE includeOrigMsgWithHeaders EXTERNAL BOOLEAN FALSE;
+
+DECLARE includeLocalEnv EXTERNAL BOOLEAN FALSE;
+DECLARE includeEnv EXTERNAL BOOLEAN FALSE;
+
+DECLARE attachMsg EXTERNAL BOOLEAN FALSE;
+DECLARE contentType EXTERNAL CHAR 'text/xml';
+DECLARE fileName EXTERNAL CHAR 'message.xml.txt';
+DECLARE truncateAfterXByte EXTERNAL INT 100000;		-- 0 = Do not truncate
+
+
+CREATE COMPUTE MODULE msg2EMail_msg2EMail
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		CALL CopyMessageHeaders();
+		
+		SET OutputRoot.MQMD.CodedCharSetId = 1208;	-- Unicode!
+		SET OutputRoot.XML.Message.To = coalesce(OutputRoot.XML.Message.To, sendTo);
+		SET OutputRoot.XML.Message.Subject = coalesce(OutputRoot.XML.Message.Subject, subject);
+		
+		IF includeException THEN		
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '                ******** Exception **********' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertException( InputExceptionList.*[1], OutputRoot );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '' );
+		END IF;
+
+		IF includeExceptionList THEN			
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '                ******** Exception List **********' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL msgTree2EMailLines( InputExceptionList, OutputRoot, 0);
+			CALL insertEMailLine( OutputRoot, '' );		
+		END IF;
+
+		IF includeOriginalMsg THEN
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '                ******** Message **********' );
+			CALL insertEMailLine( OutputRoot, '' );	
+			CALL msgTree2EMailLines( Environment.InputRoot.*[<], OutputRoot, 0 );
+			CALL insertEMailLine( OutputRoot, '' );
+		END IF;
+
+		IF includeOrigMsgWithHeaders THEN			
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '' );	
+			CALL insertEMailLine( OutputRoot, '             ******** Message WITH Headers **********' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL msgTree2EMailLines( Environment.InputRoot, OutputRoot, 0 );
+			CALL insertEMailLine( OutputRoot, '' );			
+		END IF;
+		
+		IF includeLocalEnv THEN
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '              ******** Local Environment **********' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL msgTree2EMailLines( InputLocalEnvironment, OutputRoot, 0 );
+			CALL insertEMailLine( OutputRoot, '' );
+		END IF;
+
+		IF includeEnv THEN				
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL insertEMailLine( OutputRoot, '                 ******** Environment **********' );
+			CALL insertEMailLine( OutputRoot, '' );
+			CALL msgTree2EMailLines( Environment, OutputRoot, 0 );
+			CALL insertEMailLine( OutputRoot, '' );		
+		END IF;
+
+		IF attachMsg THEN			
+			SET OutputRoot.BLOB.BLOB = InputRoot.BLOB.BLOB;
+			SET OutputRoot.XML.Message.EncodingBase64.(XML.Attribute)ContentType = contentType;
+			SET OutputRoot.XML.Message.EncodingBase64.(XML.Attribute)Name = fileName;
+			IF truncateAfterXByte > 0 THEN
+				SET OutputRoot.BLOB.BLOB = LEFT( OutputRoot.BLOB.BLOB, truncateAfterXByte );
+			END IF;
+		END IF;		
+		
+		RETURN TRUE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+END MODULE;
+
+
+CREATE COMPUTE MODULE msg2EMail_writeMessageToEnv
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		-- 1. Pipe through Msg (Compute mode = LocalEnvironment, for attaching Message to eMail)
+
+		-- 2. Write a copy into the Environment to have "MRM/XMLNSC"-Message (for putting Message in EMail-Body)
+		SET Environment.InputRoot = InputRoot;	
+		
+		RETURN TRUE;
+	END;
+
+END MODULE;
+
+
+
+CREATE PROCEDURE msgTree2EMailLines (IN root REFERENCE, IN rOutputRoot REFERENCE, IN depth INT)
+   -- Creates eMail lines to be sent with sendMail-PlugIn (IA07)  
+
+   BEGIN
+      DECLARE cursor REFERENCE TO root;
+      DECLARE lineIndex INT CARDINALITY( rOutputRoot.XML.Message.Body.Line[] ) + 1;
+      IF lineIndex < 1000 THEN
+         IF CARDINALITY (cursor.*[]) = 0 THEN -- IF the Element has no children, then it is a leaf
+            DECLARE whiteSpace CHAR REPLICATE( '  ', depth );
+            DECLARE fieldName1 CHAR FIELDNAME( cursor );
+            DECLARE fieldValue1 CHAR coalesce( cursor, '');
+            IF fieldName1 <> '' THEN
+               CALL insertEMailLine( rOutputRoot, whiteSpace || fieldName1 || ' = ' || fieldValue1 );
+               SET lineIndex = lineIndex + 1;
+            ELSE
+               CALL insertEMailLine( rOutputRoot, 'TEST' || rOutputRoot.XML.Message.Body.Line[lineIndex] || ' = ' || fieldValue1 );
+            END IF;
+         ELSE -- If has children then loop through the children, then it is a node in the tree
+            DECLARE whiteSpace CHAR REPLICATE( '  ', depth );
+            DECLARE fieldName1 CHAR FIELDNAME( cursor );
+            DECLARE fieldValue1 CHAR coalesce( cursor, '*NULL*');         
+            IF fieldValue1 = '*NULL*' THEN
+               CALL insertEMailLine( rOutputRoot, whiteSpace || fieldName1 );
+            SET lineIndex = lineIndex + 1;
+            ELSE
+               CALL insertEMailLine( rOutputRoot, whiteSpace || fieldName1 || ' = ' || fieldValue1 );
+               SET lineIndex = lineIndex + 1;
+            END IF;
+             MOVE cursor FIRSTCHILD;
+            WHILE LASTMOVE(cursor) DO
+               CALL msgTree2EMailLines(cursor, rOutputRoot, depth + 1);
+               MOVE cursor NEXTSIBLING;
+            END WHILE;
+         END IF;
+      ELSE
+         IF rOutputRoot.XML.Message.Body.Line[lineIndex - 1] <> '-------Message too long-------' THEN
+            SET rOutputRoot.XML.Message.Body.Line[lineIndex] = '-------Message too long-------';
+         END IF;
+      END IF;
+   END;
+   
+   CREATE PROCEDURE insertEMailLine (IN rOutputRoot REFERENCE, IN text CHAR)    
+   BEGIN
+      DECLARE lineIndex INT CARDINALITY( rOutputRoot.XML.Message.Body.Line[] ) + 1;      
+      IF lineIndex < 5001 THEN
+         IF LENGTH( text ) > 1000 THEN   -- Trim eMail-lines which are too long
+            SET text = SUBSTRING( text FROM 1 FOR 1000) || '[...]'; 
+         END IF;
+         SET rOutputRoot.XML.Message.Body.Line[lineIndex] = text;
+      ELSEIF lineIndex = 5001 THEN   -- eMail has enough email-lines
+         SET rOutputRoot.XML.Message.Body.Line[ 5000 ] = '-------eMail too long-------';      
+      ELSE
+         CALL throw( '"lineIndex" CANNOT BE greater than 5001, but it is "' || CAST( lineIndex AS CHAR ) || '"!' );
+      END IF;
+   END;

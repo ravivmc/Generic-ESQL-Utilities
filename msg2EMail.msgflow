@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:ComIbmCompute.msgnode="ComIbmCompute.msgnode" xmlns:ComIbmMQOutput.msgnode="ComIbmMQOutput.msgnode" xmlns:ComIbmResetContentDescriptor.msgnode="ComIbmResetContentDescriptor.msgnode" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:eflow="http://www.ibm.com/wbi/2005/eflow" xmlns:utility="http://www.ibm.com/wbi/2005/eflow_utility" nsURI="msg2EMail.msgflow"
+    nsPrefix="msg2EMail.msgflow">
+  <eClassifiers xmi:type="eflow:FCMComposite" name="FCMComposite_1">
+    <eSuperTypes href="http://www.ibm.com/wbi/2005/eflow#//FCMBlock"/>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.sendTo" name="sendTo" defaultValueLiteral="myRecipient@email.com">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.subject" name="subject" defaultValueLiteral="my subject">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.includeException" name="includeException" lowerBound="1">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.includeExceptionList" name="includeExceptionList" lowerBound="1">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.includeOriginalMsg" name="includeOriginalMsg" lowerBound="1" defaultValueLiteral="true">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.includeOrigMsgWithHeaders" name="includeOrigMsgWithHeaders" lowerBound="1">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.includeLocalEnv" name="includeLocalEnv" lowerBound="1">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.includeEnv" name="includeEnv" lowerBound="1">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.attachMsg" name="attachMsg" lowerBound="1">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.contentType" name="contentType" defaultValueLiteral="text/xml">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.fileName" name="fileName" defaultValueLiteral="message.xml.txt">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.truncateAfterXByte" name="truncateAfterXByte" defaultValueLiteral="100000">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    </eStructuralFeatures>
+    <translation xmi:type="utility:TranslatableString" key="msg2EMail" bundleName="msg2EMail" pluginId="myProject"/>
+    <colorGraphic16 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/myProject/icons/full/obj16/msg2EMail.gif"/>
+    <colorGraphic32 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/myProject/icons/full/obj30/msg2EMail.gif"/>
+    <composition>
+      <nodes xmi:type="ComIbmCompute.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_3" location="308,72" computeExpression="esql://routine/#msg2EMail_msg2EMail.Main">
+        <translation xmi:type="utility:ConstantString" string="msg2EMail"/>
+      </nodes>
+      <nodes xmi:type="ComIbmCompute.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_4" location="111,67" computeExpression="esql://routine/#msg2EMail_writeMessageToEnv.Main" computeMode="destination">
+        <translation xmi:type="utility:ConstantString" string="writeMessageToEnv"/>
+      </nodes>
+      <nodes xmi:type="ComIbmResetContentDescriptor.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_5" location="224,68" messageDomain="BLOB" resetMessageDomain="true" resetMessageSet="true" resetMessageType="true" resetMessageFormat="true">
+        <translation xmi:type="utility:ConstantString" string="RCD"/>
+      </nodes>
+      <nodes xmi:type="ComIbmMQOutput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_6" location="393,73" queueName="OUT">
+        <translation xmi:type="utility:ConstantString" string="putSendMailPluginHere"/>
+      </nodes>
+      <nodes xmi:type="eflow:FCMSource" xmi:id="InTerminal.Input" location="42,67">
+        <translation xmi:type="utility:TranslatableString" key="InTerminal.Input" bundleName="msg2EMail" pluginId="myProject"/>
+      </nodes>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_3" targetNode="FCMComposite_1_5" sourceNode="FCMComposite_1_4" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_7" targetNode="FCMComposite_1_6" sourceNode="FCMComposite_1_3" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_1" targetNode="FCMComposite_1_4" sourceNode="InTerminal.Input" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_11" targetNode="FCMComposite_1_3" sourceNode="FCMComposite_1_5" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+    </composition>
+    <propertyOrganizer>
+      <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.sendTo">
+        <propertyName xmi:type="utility:TranslatableString" key="Property.sendTo" bundleName="msg2EMail" pluginId="myProject"/>
+        <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.subject">
+          <propertyName xmi:type="utility:TranslatableString" key="Property.subject" bundleName="msg2EMail" pluginId="myProject"/>
+          <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeException">
+            <propertyName xmi:type="utility:TranslatableString" key="Property.includeException" bundleName="msg2EMail" pluginId="myProject"/>
+            <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeExceptionList">
+              <propertyName xmi:type="utility:TranslatableString" key="Property.includeExceptionList" bundleName="msg2EMail" pluginId="myProject"/>
+              <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeOriginalMsg">
+                <propertyName xmi:type="utility:TranslatableString" key="Property.includeOriginalMsg" bundleName="msg2EMail" pluginId="myProject"/>
+                <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeOrigMsgWithHeaders">
+                  <propertyName xmi:type="utility:TranslatableString" key="Property.includeOrigMsgWithHeaders" bundleName="msg2EMail" pluginId="myProject"/>
+                  <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeLocalEnv">
+                    <propertyName xmi:type="utility:TranslatableString" key="Property.includeLocalEnv" bundleName="msg2EMail" pluginId="myProject"/>
+                    <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeEnv">
+                      <propertyName xmi:type="utility:TranslatableString" key="Property.includeEnv" bundleName="msg2EMail" pluginId="myProject"/>
+                      <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.attachMsg">
+                        <propertyName xmi:type="utility:TranslatableString" key="Property.attachMsg" bundleName="msg2EMail" pluginId="myProject"/>
+                        <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.contentType">
+                          <propertyName xmi:type="utility:TranslatableString" key="Property.contentType" bundleName="msg2EMail" pluginId="myProject"/>
+                          <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.fileName">
+                            <propertyName xmi:type="utility:TranslatableString" key="Property.fileName" bundleName="msg2EMail" pluginId="myProject"/>
+                            <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.truncateAfterXByte">
+                              <propertyName xmi:type="utility:TranslatableString" key="Property.truncateAfterXByte" bundleName="msg2EMail" pluginId="myProject"/>
+                            </propertyDescriptor>
+                          </propertyDescriptor>
+                        </propertyDescriptor>
+                      </propertyDescriptor>
+                    </propertyDescriptor>
+                  </propertyDescriptor>
+                </propertyDescriptor>
+              </propertyDescriptor>
+            </propertyDescriptor>
+          </propertyDescriptor>
+        </propertyDescriptor>
+      </propertyDescriptor>
+    </propertyOrganizer>
+    <stickyBoard/>
+  </eClassifiers>
+</ecore:EPackage>

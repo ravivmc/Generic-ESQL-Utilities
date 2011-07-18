@@ -1,0 +1,12 @@
+<message>
+  <header date="2010-03-17" time="16:02.123" />
+  <orders>
+    <order orderNumber="A1001">
+      <positions>
+        <position materialNumber="A" quantity="5" />
+        <position materialNumber="A" quantity="10" />
+        <position materialNumber="B" quantity="15" />
+      </positions>
+    </order>
+  </orders>
+</message>
