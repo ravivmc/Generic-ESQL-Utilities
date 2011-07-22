@@ -1,6 +1,9 @@
 
+DECLARE sendFrom EXTERNAL CHAR '';
 DECLARE sendTo EXTERNAL CHAR 'myRecipient@email.com';
-DECLARE subject EXTERNAL CHAR 'An exception occured';
+DECLARE sendCc EXTERNAL CHAR '';
+DECLARE sendBcc EXTERNAL CHAR '';
+DECLARE subject EXTERNAL CHAR 'please have a look at this message';
 
 DECLARE includeException EXTERNAL BOOLEAN TRUE;
 DECLARE includeExceptionList EXTERNAL BOOLEAN FALSE;
@@ -23,13 +26,16 @@ CREATE COMPUTE MODULE msg2EMail_msg2EMail
 		CALL CopyMessageHeaders();
 		
 		SET OutputRoot.MQMD.CodedCharSetId = 1208;	-- Unicode!
-		SET OutputRoot.XML.Message.To = coalesce(OutputRoot.XML.Message.To, sendTo);
-		SET OutputRoot.XML.Message.Subject = coalesce(OutputRoot.XML.Message.Subject, subject);
+		SET OutputRoot.XML.Message.From = NULLIF(sendFrom, '');
+		SET OutputRoot.XML.Message.To = NULLIF(sendTo, '');
+		SET OutputRoot.XML.Message.Cc = NULLIF(sendCc, '');
+		SET OutputRoot.XML.Message.Bcc = NULLIF(sendBcc, '');
+		SET OutputRoot.XML.Message.Subject = subject;
 		
 		IF includeException THEN		
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL insertEMailLine( OutputRoot, '' );
-			CALL insertEMailLine( OutputRoot, '                ******** Exception **********' );
+			CALL insertEMailLine( OutputRoot, '                ******** Exception *********' );
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL insertException( InputExceptionList.*[1], OutputRoot );
 			CALL insertEMailLine( OutputRoot, '' );
@@ -39,7 +45,7 @@ CREATE COMPUTE MODULE msg2EMail_msg2EMail
 		IF includeExceptionList THEN			
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL insertEMailLine( OutputRoot, '' );
-			CALL insertEMailLine( OutputRoot, '                ******** Exception List **********' );
+			CALL insertEMailLine( OutputRoot, '                ******** Exception List ********' );
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL msgTree2EMailLines( InputExceptionList, OutputRoot, 0);
 			CALL insertEMailLine( OutputRoot, '' );		
@@ -48,7 +54,7 @@ CREATE COMPUTE MODULE msg2EMail_msg2EMail
 		IF includeOriginalMsg THEN
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL insertEMailLine( OutputRoot, '' );
-			CALL insertEMailLine( OutputRoot, '                ******** Message **********' );
+			CALL insertEMailLine( OutputRoot, '                ******** Message ********' );
 			CALL insertEMailLine( OutputRoot, '' );	
 			CALL msgTree2EMailLines( Environment.InputRoot.*[<], OutputRoot, 0 );
 			CALL insertEMailLine( OutputRoot, '' );
@@ -57,7 +63,7 @@ CREATE COMPUTE MODULE msg2EMail_msg2EMail
 		IF includeOrigMsgWithHeaders THEN			
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL insertEMailLine( OutputRoot, '' );	
-			CALL insertEMailLine( OutputRoot, '             ******** Message WITH Headers **********' );
+			CALL insertEMailLine( OutputRoot, '             ******** Message WITH Headers ********' );
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL msgTree2EMailLines( Environment.InputRoot, OutputRoot, 0 );
 			CALL insertEMailLine( OutputRoot, '' );			
@@ -66,7 +72,7 @@ CREATE COMPUTE MODULE msg2EMail_msg2EMail
 		IF includeLocalEnv THEN
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL insertEMailLine( OutputRoot, '' );
-			CALL insertEMailLine( OutputRoot, '              ******** Local Environment **********' );
+			CALL insertEMailLine( OutputRoot, '              ******** Local Environment ********' );
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL msgTree2EMailLines( InputLocalEnvironment, OutputRoot, 0 );
 			CALL insertEMailLine( OutputRoot, '' );
@@ -75,7 +81,7 @@ CREATE COMPUTE MODULE msg2EMail_msg2EMail
 		IF includeEnv THEN				
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL insertEMailLine( OutputRoot, '' );
-			CALL insertEMailLine( OutputRoot, '                 ******** Environment **********' );
+			CALL insertEMailLine( OutputRoot, '                 ******** Environment ********' );
 			CALL insertEMailLine( OutputRoot, '' );
 			CALL msgTree2EMailLines( Environment, OutputRoot, 0 );
 			CALL insertEMailLine( OutputRoot, '' );		
@@ -90,7 +96,21 @@ CREATE COMPUTE MODULE msg2EMail_msg2EMail
 			END IF;
 		END IF;		
 		
-		RETURN TRUE;
+		-- Consider the following: SENDING an eMail MIGHT throw an EXCEPTION: 
+		-- It also requires resources, especially time, which means that this subflow might block the actual flow from progressing.
+		-- An MQOutputNode (and a Queue) and a separate sendEMail-Flow (which basically just contains the sendMail-Plugin) are advisable:
+		--   On the MQOutputNode consider setting the following properties:
+		--     Advanced -> "Transaction Mode" = "Automatic" --> "No" (Logging might/should be decoupled from the transaction of the flow)
+		--     Advanced -> "New message ID" = unchecked --> checked! (You create a new separate "eMail" msg)
+		--     Advanced -> "Message context" = "Pass All" --> "Set All"
+		
+		-- BUT: Sending attachmens (attachMsg=TRUE) does ONLY work WITHIN the same (sub-)FLOW:
+--		IF OutputRoot.BLOB.BLOB IS NOT NULL THEN    -- There is an attachment
+--			PROPAGATE TO TERMINAL 'out1';   		-- TODO: Insert SendMailPlugIn (into the msg2EMail-Subflow) and wire the 'out1'-Terminal
+--			RETURN FALSE; 
+--		END IF;
+		
+		RETURN TRUE;  -- PUT to an Output-Queue (and send the eMail in a separate subflow).
 	END;
 
 	CREATE PROCEDURE CopyMessageHeaders() BEGIN

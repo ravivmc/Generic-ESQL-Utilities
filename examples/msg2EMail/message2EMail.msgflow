@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ComIbmMQInput.msgnode="ComIbmMQInput.msgnode" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:eflow="http://www.ibm.com/wbi/2005/eflow" xmlns:msg2EMail.msgflow="msg2EMail.msgflow" xmlns:utility="http://www.ibm.com/wbi/2005/eflow_utility" nsURI="examples/msg2EMail/message2EMail.msgflow" nsPrefix="examples_msg2EMail_message2EMail.msgflow">
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:ComIbmMQInput.msgnode="ComIbmMQInput.msgnode" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:eflow="http://www.ibm.com/wbi/2005/eflow" xmlns:msg2EMail.msgflow="msg2EMail.msgflow" xmlns:utility="http://www.ibm.com/wbi/2005/eflow_utility" nsURI="examples/msg2EMail/message2EMail.msgflow"
+    nsPrefix="examples_msg2EMail_message2EMail.msgflow">
   <eClassifiers xmi:type="eflow:FCMComposite" name="FCMComposite_1">
     <eSuperTypes href="http://www.ibm.com/wbi/2005/eflow#//FCMBlock"/>
-    <translation xmi:type="utility:TranslatableString" key="message2EMail" bundleName="examples/msg2EMail/message2EMail" pluginId="myProject"/>
-    <colorGraphic16 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/myProject/icons/full/obj16/message2EMail.gif"/>
-    <colorGraphic32 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/myProject/icons/full/obj30/message2EMail.gif"/>
+    <translation xmi:type="utility:TranslatableString" key="message2EMail" bundleName="examples/msg2EMail/message2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+    <colorGraphic16 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/mqsiuser-Generic-ESQL-Utilities-0cfa1c1/icons/full/obj16/message2EMail.gif"/>
+    <colorGraphic32 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/mqsiuser-Generic-ESQL-Utilities-0cfa1c1/icons/full/obj30/message2EMail.gif"/>
     <composition>
       <nodes xmi:type="ComIbmMQInput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_1" location="115,73" queueName="IN" messageDomainProperty="XMLNSC">
         <translation xmi:type="utility:ConstantString" string="IN"/>

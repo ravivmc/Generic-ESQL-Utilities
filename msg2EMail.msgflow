@@ -4,10 +4,19 @@
     nsPrefix="msg2EMail.msgflow">
   <eClassifiers xmi:type="eflow:FCMComposite" name="FCMComposite_1">
     <eSuperTypes href="http://www.ibm.com/wbi/2005/eflow#//FCMBlock"/>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.sendFrom" name="sendFrom" defaultValueLiteral="">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    </eStructuralFeatures>
     <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.sendTo" name="sendTo" defaultValueLiteral="myRecipient@email.com">
       <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     </eStructuralFeatures>
-    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.subject" name="subject" defaultValueLiteral="my subject">
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.sendCc" name="sendCc">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.sendBcc" name="sendBcc">
+      <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    </eStructuralFeatures>
+    <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.subject" name="subject" defaultValueLiteral="please have a look at this message">
       <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     </eStructuralFeatures>
     <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.includeException" name="includeException" lowerBound="1">
@@ -40,9 +49,9 @@
     <eStructuralFeatures xmi:type="ecore:EAttribute" xmi:id="Property.truncateAfterXByte" name="truncateAfterXByte" defaultValueLiteral="100000">
       <eType xmi:type="ecore:EDataType" href="http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
     </eStructuralFeatures>
-    <translation xmi:type="utility:TranslatableString" key="msg2EMail" bundleName="msg2EMail" pluginId="myProject"/>
-    <colorGraphic16 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/myProject/icons/full/obj16/msg2EMail.gif"/>
-    <colorGraphic32 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/myProject/icons/full/obj30/msg2EMail.gif"/>
+    <translation xmi:type="utility:TranslatableString" key="msg2EMail" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+    <colorGraphic16 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/mqsiuser-Generic-ESQL-Utilities-0cfa1c1/icons/full/obj16/msg2EMail.gif"/>
+    <colorGraphic32 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/mqsiuser-Generic-ESQL-Utilities-0cfa1c1/icons/full/obj30/msg2EMail.gif"/>
     <composition>
       <nodes xmi:type="ComIbmCompute.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_3" location="308,72" computeExpression="esql://routine/#msg2EMail_msg2EMail.Main">
         <translation xmi:type="utility:ConstantString" string="msg2EMail"/>
@@ -53,11 +62,11 @@
       <nodes xmi:type="ComIbmResetContentDescriptor.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_5" location="224,68" messageDomain="BLOB" resetMessageDomain="true" resetMessageSet="true" resetMessageType="true" resetMessageFormat="true">
         <translation xmi:type="utility:ConstantString" string="RCD"/>
       </nodes>
-      <nodes xmi:type="ComIbmMQOutput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_6" location="393,73" queueName="OUT">
-        <translation xmi:type="utility:ConstantString" string="putSendMailPluginHere"/>
+      <nodes xmi:type="ComIbmMQOutput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_6" location="393,73" queueName="OUT" transactionMode="no" newMsgId="true" messageContext="setAll">
+        <translation xmi:type="utility:ConstantString" string="OUT (put SendMailPlugin in)"/>
       </nodes>
       <nodes xmi:type="eflow:FCMSource" xmi:id="InTerminal.Input" location="42,67">
-        <translation xmi:type="utility:TranslatableString" key="InTerminal.Input" bundleName="msg2EMail" pluginId="myProject"/>
+        <translation xmi:type="utility:TranslatableString" key="InTerminal.Input" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
       </nodes>
       <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_3" targetNode="FCMComposite_1_5" sourceNode="FCMComposite_1_4" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
       <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_7" targetNode="FCMComposite_1_6" sourceNode="FCMComposite_1_3" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
@@ -65,30 +74,39 @@
       <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_11" targetNode="FCMComposite_1_3" sourceNode="FCMComposite_1_5" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
     </composition>
     <propertyOrganizer>
-      <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.sendTo">
-        <propertyName xmi:type="utility:TranslatableString" key="Property.sendTo" bundleName="msg2EMail" pluginId="myProject"/>
-        <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.subject">
-          <propertyName xmi:type="utility:TranslatableString" key="Property.subject" bundleName="msg2EMail" pluginId="myProject"/>
-          <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeException">
-            <propertyName xmi:type="utility:TranslatableString" key="Property.includeException" bundleName="msg2EMail" pluginId="myProject"/>
-            <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeExceptionList">
-              <propertyName xmi:type="utility:TranslatableString" key="Property.includeExceptionList" bundleName="msg2EMail" pluginId="myProject"/>
-              <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeOriginalMsg">
-                <propertyName xmi:type="utility:TranslatableString" key="Property.includeOriginalMsg" bundleName="msg2EMail" pluginId="myProject"/>
-                <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeOrigMsgWithHeaders">
-                  <propertyName xmi:type="utility:TranslatableString" key="Property.includeOrigMsgWithHeaders" bundleName="msg2EMail" pluginId="myProject"/>
-                  <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeLocalEnv">
-                    <propertyName xmi:type="utility:TranslatableString" key="Property.includeLocalEnv" bundleName="msg2EMail" pluginId="myProject"/>
-                    <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeEnv">
-                      <propertyName xmi:type="utility:TranslatableString" key="Property.includeEnv" bundleName="msg2EMail" pluginId="myProject"/>
-                      <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.attachMsg">
-                        <propertyName xmi:type="utility:TranslatableString" key="Property.attachMsg" bundleName="msg2EMail" pluginId="myProject"/>
-                        <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.contentType">
-                          <propertyName xmi:type="utility:TranslatableString" key="Property.contentType" bundleName="msg2EMail" pluginId="myProject"/>
-                          <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.fileName">
-                            <propertyName xmi:type="utility:TranslatableString" key="Property.fileName" bundleName="msg2EMail" pluginId="myProject"/>
-                            <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.truncateAfterXByte">
-                              <propertyName xmi:type="utility:TranslatableString" key="Property.truncateAfterXByte" bundleName="msg2EMail" pluginId="myProject"/>
+      <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.sendFrom">
+        <propertyName xmi:type="utility:TranslatableString" key="Property.sendFrom" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+        <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.sendTo">
+          <propertyName xmi:type="utility:TranslatableString" key="Property.sendTo" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+          <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.sendCc">
+            <propertyName xmi:type="utility:TranslatableString" key="Property.sendCc" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+            <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.sendBcc">
+              <propertyName xmi:type="utility:TranslatableString" key="Property.sendBcc" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+              <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.subject">
+                <propertyName xmi:type="utility:TranslatableString" key="Property.subject" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeException">
+                  <propertyName xmi:type="utility:TranslatableString" key="Property.includeException" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                  <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeExceptionList">
+                    <propertyName xmi:type="utility:TranslatableString" key="Property.includeExceptionList" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                    <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeOriginalMsg">
+                      <propertyName xmi:type="utility:TranslatableString" key="Property.includeOriginalMsg" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                      <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeOrigMsgWithHeaders">
+                        <propertyName xmi:type="utility:TranslatableString" key="Property.includeOrigMsgWithHeaders" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                        <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeLocalEnv">
+                          <propertyName xmi:type="utility:TranslatableString" key="Property.includeLocalEnv" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                          <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.includeEnv">
+                            <propertyName xmi:type="utility:TranslatableString" key="Property.includeEnv" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                            <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.attachMsg">
+                              <propertyName xmi:type="utility:TranslatableString" key="Property.attachMsg" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                              <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.contentType">
+                                <propertyName xmi:type="utility:TranslatableString" key="Property.contentType" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                                <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.fileName">
+                                  <propertyName xmi:type="utility:TranslatableString" key="Property.fileName" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                                  <propertyDescriptor groupName="Group.eMailProperties" configurable="true" userDefined="true" describedAttribute="Property.truncateAfterXByte">
+                                    <propertyName xmi:type="utility:TranslatableString" key="Property.truncateAfterXByte" bundleName="msg2EMail" pluginId="mqsiuser-Generic-ESQL-Utilities-0cfa1c1"/>
+                                  </propertyDescriptor>
+                                </propertyDescriptor>
+                              </propertyDescriptor>
                             </propertyDescriptor>
                           </propertyDescriptor>
                         </propertyDescriptor>
